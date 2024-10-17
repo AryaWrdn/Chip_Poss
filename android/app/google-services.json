@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "716926455817",
+    "project_id": "burgergembong",
+    "storage_bucket": "burgergembong.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716926455817:android:d2764d6242999a7bcb68d8",
+        "android_client_info": {
+          "package_name": "com.example.chip_pos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIUxP46mjEQrhLQY4QZzjnU4X-ypAZOaE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716926455817:android:fb53d6fe631ca456cb68d8",
+        "android_client_info": {
+          "package_name": "com.example.pos_burger_gembong"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIUxP46mjEQrhLQY4QZzjnU4X-ypAZOaE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
