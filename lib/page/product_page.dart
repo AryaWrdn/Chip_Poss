@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chip_pos/database/db_helper.dart' as db;
 import 'package:chip_pos/database/product.dart';
+import 'package:chip_pos/database/sync_helper.dart';
 import 'package:chip_pos/styles/stylbttn.dart';
 import 'package:chip_pos/styles/style.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -65,7 +66,11 @@ class _ProductPageState extends State<ProductPage> {
         imageUrl: imageUrl,
       );
 
+      // Tambahkan produk ke SQLite
       await dbHelper.insertProduct(newProduct);
+
+      // Sinkronisasi data ke Firebase
+      await syncDataToFirebase(dbHelper);
 
       // Kosongkan input setelah produk berhasil ditambahkan
       nameController.clear();

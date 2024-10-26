@@ -147,8 +147,7 @@ class _OrderPageState extends State<OrderPage> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Color.fromARGB(255, 180, 181, 168), // Warna solid di atas
-                  Color.fromARGB(
-                      0, 138, 141, 99), // Warna yang lebih transparan di bawah
+                  Color.fromARGB(0, 138, 141, 99),
                 ],
               ),
               boxShadow: [

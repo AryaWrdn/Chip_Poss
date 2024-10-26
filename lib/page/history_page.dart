@@ -126,7 +126,7 @@ class HistoryPage extends StatelessWidget {
                               var totalPrice = productPrice * productQuantity;
 
                               print(
-                                  'Menampilkan produk: $productName, Quantity: $productQuantity, Total: $totalPrice'); // Debugging
+                                  'Menampilkan produk: $productName, Quantity: $productQuantity, Total: $totalPrice');
 
                               return Text(
                                 '$productName                       $productQuantity x Rp $productPrice = Rp $totalPrice',
