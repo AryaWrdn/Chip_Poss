@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:chip_pos/database/db_helper.dart' as db;
 import 'package:chip_pos/database/product.dart';
 import 'package:chip_pos/database/sync_helper.dart';
@@ -8,6 +7,7 @@ import 'package:chip_pos/styles/style.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ProductPage extends StatefulWidget {
   const ProductPage({Key? key}) : super(key: key);
@@ -22,6 +22,15 @@ class _ProductPageState extends State<ProductPage> {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController stockController = TextEditingController();
   String? imagePath;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    priceController.dispose();
+    stockController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectImage() async {
     final picker = ImagePicker();
@@ -37,55 +46,62 @@ class _ProductPageState extends State<ProductPage> {
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
         stockController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill in all fields')),
+        );
+      }
       return false;
     }
     return true;
   }
 
   Future<void> _addProduct() async {
-    if (!_validateInputs()) return;
+    if (!_validateInputs() || _isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    String name = nameController.text;
+    double price = double.parse(priceController.text);
+    int stock = int.parse(stockController.text);
+    String? imageUrl;
+
+    if (imagePath != null) {
+      File imageFile = File(imagePath!);
+      imageUrl = await _uploadImage(imageFile);
+    }
+
+    Product newProduct = Product(
+      name: name,
+      price: price,
+      stock: stock,
+      imageUrl: imageUrl,
+    );
 
     try {
-      String name = nameController.text;
-      double price = double.parse(priceController.text);
-      int stock = int.parse(stockController.text);
-      String? imageUrl;
-
-      if (imagePath != null) {
-        File imageFile = File(imagePath!);
-        imageUrl = await _uploadImage(imageFile);
+      // Simpan produk ke SQLite
+      await dbHelper.insertOrUpdateProduct(newProduct);
+      if (mounted) {
+        _showSuccessDialog(
+            "Product added locally. It will be synced when online.");
       }
 
-      Product newProduct = Product(
-        name: name,
-        price: price,
-        stock: stock,
-        imageUrl: imageUrl,
-      );
+      // Cek koneksi internet dan sinkronisasi
+      await _checkConnectivityAndSync();
 
-      // Tambahkan produk ke SQLite
-      await dbHelper.insertProduct(newProduct);
-
-      // Sinkronisasi data ke Firebase
-      await syncDataToFirebase(dbHelper);
-
-      // Kosongkan input setelah produk berhasil ditambahkan
-      nameController.clear();
-      priceController.clear();
-      stockController.clear();
-      setState(() {
-        imagePath = null;
-      });
-
-      // Tampilkan dialog "Berhasil menambahkan menu"
-      _showSuccessDialog();
+      // Kosongkan input setelah penambahan produk
+      _clearInputs();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -100,24 +116,63 @@ class _ProductPageState extends State<ProductPage> {
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Success'),
-          content: Text('Berhasil menambahkan menu'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
+  void _showSuccessDialog(String message) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Success'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  Future<void> _checkConnectivityAndSync() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult != ConnectivityResult.none) {
+      // Sinkronisasi data ke Firebase jika online
+      await syncDataToFirebase(dbHelper);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Data synced to Firebase.')),
         );
-      },
-    );
+      }
+    } else {
+      // Jika offline, tunggu hingga online untuk sinkronisasi
+      Connectivity().onConnectivityChanged.listen((result) async {
+        if (result != ConnectivityResult.none) {
+          await syncDataToFirebase(dbHelper);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Data synced to Firebase.')),
+            );
+          }
+        }
+      });
+    }
+  }
+
+  void _clearInputs() {
+    if (mounted) {
+      nameController.clear();
+      priceController.clear();
+      stockController.clear();
+      setState(() {
+        imagePath = null;
+        _isLoading = false;
+      });
+    }
   }
 
   @override

@@ -4,7 +4,9 @@ import 'package:chip_pos/page/order_page.dart';
 import 'package:chip_pos/page/product_page.dart';
 import 'package:chip_pos/page/stock.dart';
 import 'package:chip_pos/styles/style.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 // import 'package:fl_chart/fl_chart.dart';
 
 class Menu extends StatefulWidget {
@@ -18,11 +20,13 @@ class _MenuState extends State<Menu> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   late Timer _timer;
+  double totalPendapatan = 0; // Total revenue
 
   @override
   void initState() {
     super.initState();
-    // Timer untuk auto-scroll setiap 3 detik
+    _fetchTotalPendapatan(); // Fetch the total revenue at the start
+
     _timer = Timer.periodic(const Duration(seconds: 7), (Timer timer) {
       if (_currentPage < 2) {
         _currentPage++;
@@ -30,7 +34,7 @@ class _MenuState extends State<Menu> {
         _currentPage = 0;
       }
 
-      // Scroll ke halaman berikutnya secara otomatis
+      // Scroll to the next page automatically
       _pageController.animateToPage(
         _currentPage,
         duration: const Duration(milliseconds: 1000),
@@ -38,11 +42,26 @@ class _MenuState extends State<Menu> {
       );
     });
 
-    // Menambahkan listener untuk mengupdate halaman saat di-scroll
     _pageController.addListener(() {
       setState(() {
         _currentPage = _pageController.page!.round();
       });
+    });
+  }
+
+  Future<void> _fetchTotalPendapatan() async {
+    // Fetch total revenue from Firestore
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('orderHistory').get();
+
+    double total = 0;
+    for (var order in snapshot.docs) {
+      var orderData = order.data() as Map<String, dynamic>;
+      total += orderData['total'];
+    }
+
+    setState(() {
+      totalPendapatan = total; // Update the state with the total revenue
     });
   }
 
@@ -56,24 +75,6 @@ class _MenuState extends State<Menu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     "Burger Gembong",
-      //     style: TextStyles.heading,
-      //   ),
-      //   backgroundColor: const Color.fromARGB(255, 241, 241, 223),
-      //   actions: [
-      //     IconButton(
-      //       icon: Icon(
-      //         Icons.notifications,
-      //         color: AppColors.menu,
-      //         size: 30,
-      //       ),
-      //       onPressed: () {},
-      //     ),
-      //     const SizedBox(width: 16), // Spasi antara ikon dan tepi
-      //   ],
-      // ),
       body: SingleChildScrollView(
         child: Container(
           height: 785,
@@ -166,7 +167,6 @@ class _MenuState extends State<Menu> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Fitur Pencarian
                       Expanded(
                         child: TextField(
                           decoration: InputDecoration(
@@ -183,9 +183,7 @@ class _MenuState extends State<Menu> {
                           ),
                         ),
                       ),
-                      const SizedBox(
-                          width: 10), // Spasi antara TextField dan foto profil
-                      // Foto Profil
+                      const SizedBox(width: 10),
                       CircleAvatar(
                           radius: 25.0,
                           backgroundImage: AssetImage('assets/images/1.jpeg')
@@ -196,100 +194,6 @@ class _MenuState extends State<Menu> {
                   ),
                 ),
               ),
-              //   child: Padding(
-              //     padding: const EdgeInsets.all(12.0),
-              //     child: Column(
-              //       children: [
-              //         Row(
-              //           children: [
-              //             Text('Statistik',
-              //                 style: TextStyles
-              //                     .judulBerita // Ganti dengan TextStyles.judulBerita jika perlu
-              //                 ),
-              //             const SizedBox(
-              //                 width: 10), // Jarak antara teks dan divider
-              //             const Expanded(
-              //               child: Divider(
-              //                 color: AppColors.merah,
-              //                 thickness: 2,
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //         const SizedBox(height: 10),
-              //         Container(
-              //           alignment: Alignment.center,
-              //           height: 200,
-              //           decoration: BoxDecoration(
-              //               color: AppColors.table,
-              //               borderRadius:
-              //                   const BorderRadius.all(Radius.circular(20))),
-              //           child: LineChart(
-              //             LineChartData(
-              //               gridData: FlGridData(show: false),
-              //               titlesData: FlTitlesData(
-              //                 leftTitles: AxisTitles(
-              //                     sideTitles: SideTitles(showTitles: true)),
-              //                 bottomTitles: AxisTitles(
-              //                   sideTitles: SideTitles(
-              //                     showTitles: true,
-              //                     reservedSize: 36,
-              //                     getTitlesWidget: (value, meta) {
-              //                       switch (value.toInt()) {
-              //                         case 1:
-              //                           return const Text('Sen');
-              //                         case 2:
-              //                           return const Text('Sel');
-              //                         case 3:
-              //                           return const Text('Rab');
-              //                         case 4:
-              //                           return const Text('Kam');
-              //                         case 5:
-              //                           return const Text('Jum');
-              //                         case 6:
-              //                           return const Text('Sab');
-              //                         case 7:
-              //                           return const Text('Min');
-              //                         default:
-              //                           return const Text('');
-              //                       }
-              //                     },
-              //                   ),
-              //                 ),
-              //               ),
-              //               borderData: FlBorderData(
-              //                 show: true,
-              //                 border: Border.all(color: Colors.black, width: 2),
-              //               ),
-              //               minX: 0,
-              //               maxX: 7,
-              //               minY: 0,
-              //               maxY: 10,
-              //               lineBarsData: [
-              //                 LineChartBarData(
-              //                   spots: [
-              //                     FlSpot(1, 3),
-              //                     FlSpot(2, 1),
-              //                     FlSpot(3, 4),
-              //                     FlSpot(4, 5),
-              //                     FlSpot(5, 6),
-              //                     FlSpot(6, 8),
-              //                     FlSpot(7, 7),
-              //                   ],
-              //                   isCurved: true,
-              //                   color: AppColors.birugelapdikit,
-              //                   barWidth: 2,
-              //                   belowBarData: BarAreaData(show: false),
-              //                 ),
-              //               ],
-              //             ),
-              //           ),
-              //         )
-              //       ],
-              //     ),
-              //   ),
-              // ),
-
               Column(
                 children: [
                   Container(
@@ -309,71 +213,53 @@ class _MenuState extends State<Menu> {
                         color: const Color.fromARGB(189, 248, 242, 221),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Baris untuk Pendapatan
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('orderHistory')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+
+                          double total = 0;
+                          for (var order in snapshot.data!.docs) {
+                            var orderData =
+                                order.data() as Map<String, dynamic>;
+                            total += orderData['total'];
+                          }
+
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Text(
-                                'Pendapatan',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(
-                                  width: 16), // Jarak antara teks dan nilai
-                              Icon(
-                                Icons.arrow_upward, // Tanda panah ke atas
-                                color: Colors.green, // Warna hijau
-                                size: 20,
-                              ),
-                              // Jarak antara panah dan nilai
-                              Text(
-                                '5000', // Nilai pendapatan
-                                style: TextStyle(fontSize: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Pendapatan',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(width: 80),
+                                  Icon(
+                                    Icons.arrow_upward,
+                                    color: Colors.green,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    NumberFormat.currency(
+                                            locale: 'id_ID', symbol: 'Rp ')
+                                        .format(total),
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                          Column(
-                            children: [
-                              SizedBox(height: 6),
-                              Text("|"),
-                              Text("|")
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              SizedBox(height: 6),
-                              Text("|"),
-                              Text("|")
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '7000', // Nilai pengeluaran
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              Icon(
-                                Icons.arrow_downward, // Tanda panah ke bawah
-                                color: Colors.red, // Warna merah
-                                size: 20,
-                              ),
-                              SizedBox(width: 16),
-                              Text(
-                                'Pengeluaran',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -384,9 +270,12 @@ class _MenuState extends State<Menu> {
                       child: PageView(
                         controller: _pageController,
                         children: [
-                          imageCard('assets/images/1.jpeg'),
-                          imageCard('assets/images/2.jpeg'),
-                          imageCard('assets/images/3.jpeg'),
+                          imageCard(
+                              'https://www.sasa.co.id/medias/page_medias/Screen_Shot_2021-10-12_at_09_28_42.png'),
+                          imageCard(
+                              'https://www.blibli.com/friends-backend/wp-content/uploads/2023/08/COVER.jpg'),
+                          imageCard(
+                              'https://asset-2.tstatic.net/medan/foto/bank/images/burger-enak-di-medan.jpg'),
                         ],
                       ),
                     ),
@@ -500,7 +389,6 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  // Widget untuk menampilkan gambar dengan border
   Widget imageCard(String imagePath) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -509,7 +397,9 @@ class _MenuState extends State<Menu> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           image: DecorationImage(
-            image: AssetImage(imagePath),
+            image: imagePath.startsWith('http')
+                ? NetworkImage(imagePath)
+                : AssetImage(imagePath) as ImageProvider,
             fit: BoxFit.cover,
           ),
         ),
@@ -517,7 +407,6 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  // Widget untuk menampilkan menu box
   Widget menuBox(String title, Widget icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
