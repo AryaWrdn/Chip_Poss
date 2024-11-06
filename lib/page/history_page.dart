@@ -31,10 +31,8 @@ class HistoryPage extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color.fromARGB(
-                            255, 180, 181, 168), // Warna solid di atas
-                        Color.fromARGB(0, 138, 141,
-                            99), // Warna yang lebih transparan di bawah
+                        Color.fromARGB(255, 180, 181, 168),
+                        Color.fromARGB(0, 138, 141, 99),
                       ],
                     ),
                     boxShadow: [
@@ -56,20 +54,14 @@ class HistoryPage extends StatelessWidget {
               itemCount: orderHistory.length,
               itemBuilder: (context, index) {
                 var order = orderHistory[index];
-                // Menggabungkan produk yang sama
                 Map<String, Map<String, dynamic>> productMap = {};
-                double totalOrderPrice =
-                    0.0; // Inisialisasi total harga untuk pesanan ini
-
+                double totalOrderPrice = 0.0;
                 for (var product in order['products']) {
                   var productName = product['name'];
                   var productPrice = product['price'];
-                  var productQuantity =
-                      product['quantity']; // Pastikan quantity ada
+                  var productQuantity = product['quantity'];
 
-                  totalOrderPrice += productPrice *
-                      productQuantity; // Hitung total harga pesanan
-
+                  totalOrderPrice += productPrice * productQuantity;
                   if (productMap.containsKey(productName)) {
                     productMap[productName]!['quantity'] += productQuantity;
                   } else {
@@ -95,10 +87,8 @@ class HistoryPage extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color.fromARGB(
-                                255, 180, 181, 168), // Warna solid di atas
-                            Color.fromARGB(0, 138, 141,
-                                99), // Warna yang lebih transparan di bawah
+                            Color.fromARGB(255, 180, 181, 168),
+                            Color.fromARGB(0, 138, 141, 99),
                           ],
                         ),
                         boxShadow: [

@@ -20,7 +20,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'products.db');
     return await openDatabase(
       path,
-      version: 2, // Ubah versi menjadi 2
+      version: 2,
       onCreate: (db, version) {
         return db.execute('''
         CREATE TABLE products(
@@ -55,7 +55,7 @@ class DatabaseHelper {
         name: maps[i]['name'],
         price: maps[i]['price'],
         stock: maps[i]['stock'],
-        imageUrl: maps[i]['imageUrl'], // Pastikan untuk mengembalikan imageUrl
+        imageUrl: maps[i]['imageUrl'],
       );
     });
   }

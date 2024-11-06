@@ -146,8 +146,7 @@ class _OrderPageState extends State<OrderPage> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.fromARGB(255, 180, 181, 168), // Warna solid di atas
-                  Color.fromARGB(0, 138, 141, 99),
+                  Color.fromARGB(255, 180, 181, 168),
                 ],
               ),
               boxShadow: [
@@ -183,8 +182,7 @@ class _OrderPageState extends State<OrderPage> {
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                      6.0), // Radius border
+                                  borderRadius: BorderRadius.circular(6.0),
                                   child: product.imageUrl != null &&
                                           product.imageUrl!.isNotEmpty
                                       ? Image.network(
@@ -192,7 +190,7 @@ class _OrderPageState extends State<OrderPage> {
                                           fit: BoxFit.cover,
                                         )
                                       : Image.asset(
-                                          'assets/images/1.jpeg', // Path gambar default
+                                          'assets/images/1.jpeg',
                                           fit: BoxFit.cover,
                                         ),
                                 )),

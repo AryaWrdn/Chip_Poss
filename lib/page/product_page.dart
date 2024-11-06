@@ -65,22 +65,14 @@ class _ProductPageState extends State<ProductPage> {
         stock: stock,
         imageUrl: imageUrl,
       );
-
-      // Tambahkan produk ke SQLite
       await dbHelper.insertProduct(newProduct);
-
-      // Sinkronisasi data ke Firebase
       await syncDataToFirebase(dbHelper);
-
-      // Kosongkan input setelah produk berhasil ditambahkan
       nameController.clear();
       priceController.clear();
       stockController.clear();
       setState(() {
         imagePath = null;
       });
-
-      // Tampilkan dialog "Berhasil menambahkan menu"
       _showSuccessDialog();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

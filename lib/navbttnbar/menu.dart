@@ -22,7 +22,6 @@ class _MenuState extends State<Menu> {
   @override
   void initState() {
     super.initState();
-    // Timer untuk auto-scroll setiap 3 detik
     _timer = Timer.periodic(const Duration(seconds: 7), (Timer timer) {
       if (_currentPage < 2) {
         _currentPage++;
@@ -166,7 +165,6 @@ class _MenuState extends State<Menu> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Fitur Pencarian
                       Expanded(
                         child: TextField(
                           decoration: InputDecoration(
@@ -183,9 +181,7 @@ class _MenuState extends State<Menu> {
                           ),
                         ),
                       ),
-                      const SizedBox(
-                          width: 10), // Spasi antara TextField dan foto profil
-                      // Foto Profil
+                      const SizedBox(width: 10),
                       CircleAvatar(
                           radius: 25.0,
                           backgroundImage: AssetImage('assets/images/1.jpeg')
@@ -384,9 +380,12 @@ class _MenuState extends State<Menu> {
                       child: PageView(
                         controller: _pageController,
                         children: [
-                          imageCard('assets/images/1.jpeg'),
-                          imageCard('assets/images/2.jpeg'),
-                          imageCard('assets/images/3.jpeg'),
+                          imageCard(
+                              'https://www.sasa.co.id/medias/page_medias/Screen_Shot_2021-10-12_at_09_28_42.png'),
+                          imageCard(
+                              'https://www.blibli.com/friends-backend/wp-content/uploads/2023/08/COVER.jpg'),
+                          imageCard(
+                              'https://asset-2.tstatic.net/medan/foto/bank/images/burger-enak-di-medan.jpg'),
                         ],
                       ),
                     ),
@@ -500,7 +499,6 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  // Widget untuk menampilkan gambar dengan border
   Widget imageCard(String imagePath) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -509,7 +507,9 @@ class _MenuState extends State<Menu> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           image: DecorationImage(
-            image: AssetImage(imagePath),
+            image: imagePath.startsWith('http')
+                ? NetworkImage(imagePath)
+                : AssetImage(imagePath) as ImageProvider,
             fit: BoxFit.cover,
           ),
         ),
@@ -517,7 +517,6 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  // Widget untuk menampilkan menu box
   Widget menuBox(String title, Widget icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
