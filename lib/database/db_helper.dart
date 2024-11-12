@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'product.dart';
@@ -23,14 +24,14 @@ class DatabaseHelper {
       version: 2,
       onCreate: (db, version) {
         return db.execute('''
-        CREATE TABLE products(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT,
-          price REAL,
-          stock INTEGER,
-          imageUrl TEXT
-        )
-      ''');
+          CREATE TABLE products(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            price REAL,
+            stock INTEGER,
+            imageUrl TEXT
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -40,10 +41,31 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> insertProduct(Product product) async {
+  Future<void> insertOrUpdateProduct(Product product) async {
     final db = await database;
-    await db.insert('products', product.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    // Check if the product already exists
+    var existingProduct = await db.query(
+      'products',
+      where: 'id = ?',
+      whereArgs: [product.id],
+    );
+
+    if (existingProduct.isNotEmpty) {
+      // If exists, update the product
+      await db.update(
+        'products',
+        product.toMap(),
+        where: 'id = ?',
+        whereArgs: [product.id],
+      );
+    } else {
+      // If not, insert the product
+      await db.insert(
+        'products',
+        product.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
 
   Future<List<Product>> getProducts() async {
@@ -82,5 +104,30 @@ class DatabaseHelper {
         .collection('products')
         .doc(id.toString())
         .delete();
+  }
+
+  Future<void> syncDataToFirebase() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult != ConnectivityResult.none) {
+      try {
+        List<Product> localProducts = await getProducts();
+        for (var product in localProducts) {
+          await FirebaseFirestore.instance
+              .collection('products')
+              .doc(product.id.toString())
+              .set({
+            'name': product.name,
+            'price': product.price,
+            'stock': product.stock,
+            'imageUrl': product.imageUrl,
+          });
+        }
+        print('Data successfully synced to Firebase');
+      } catch (e) {
+        print('Error syncing data to Firebase: $e');
+      }
+    } else {
+      print('No internet connection. Unable to sync data.');
+    }
   }
 }

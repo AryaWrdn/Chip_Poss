@@ -1,80 +1,136 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:chip_pos/database/db_helper.dart';
-import 'package:chip_pos/database/product.dart';
 import 'package:chip_pos/page/history_page.dart';
 import 'package:chip_pos/styles/stylbttn.dart';
 import 'package:chip_pos/styles/style.dart';
 
-List<Map<String, dynamic>> orderHistory = [];
-
 class OrderPage extends StatefulWidget {
-  const OrderPage({Key? key}) : super(key: key);
+  final String? orderId;
+  final Map<String, dynamic>? initialOrderData;
+
+  const OrderPage({Key? key, this.orderId, this.initialOrderData})
+      : super(key: key);
 
   @override
   _OrderPageState createState() => _OrderPageState();
 }
 
 class _OrderPageState extends State<OrderPage> {
-  final dbHelper = DatabaseHelper();
-  List<Product> products = [];
-  List<Product> selectedProducts = [];
+  List<Map<String, dynamic>> products = [];
+  List<Map<String, dynamic>> selectedProducts = [];
   double totalBill = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
-  }
-
-  Future<void> _loadProducts() async {
-    List<Product> list = await dbHelper.getProducts();
-    setState(() {
-      products = list;
-    });
-  }
-
-  void _uploadStockToFirebase(Product product) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    try {
-      await firestore.collection('products').doc(product.id.toString()).set({
-        'name': product.name,
-        'stock': product.stock,
-        'price': product.price,
-      });
-      debugPrint('Stok produk berhasil di-upload!');
-    } catch (error) {
-      _showErrorSnackBar('Gagal meng-upload stok produk: $error');
+    _fetchProductsFromFirebase();
+    if (widget.initialOrderData != null) {
+      _loadInitialOrderData(widget.initialOrderData!);
     }
   }
 
-  void _addToBill(Product product) {
-    if (product.stock > 0) {
+  Future<void> _fetchProductsFromFirebase() async {
+    try {
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      final snapshot = await firestore.collection('products').get();
       setState(() {
-        selectedProducts.add(product);
-        totalBill += product.price;
-        product.stock -= 1;
-        dbHelper.updateProduct(product);
-        _uploadStockToFirebase(product);
+        products = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'name': data['name'],
+            'stock': data['stock'],
+            'price': data['price'],
+            'imageUrl': data['imageUrl'] ?? '',
+          };
+        }).toList();
       });
-      _showSnackBar('${product.name} ditambahkan ke bill');
-    } else {
-      _showErrorSnackBar('Stok tidak cukup untuk ${product.name}');
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
+  }
+
+  void _loadInitialOrderData(Map<String, dynamic> orderData) {
+    setState(() {
+      selectedProducts = List<Map<String, dynamic>>.from(orderData['products']);
+      totalBill = orderData['total'];
+    });
+  }
+
+  void _addToBill(Map<String, dynamic> product) {
+    setState(() {
+      // Cek jika produk sudah ada di selectedProducts
+      final existingProductIndex =
+          selectedProducts.indexWhere((p) => p['id'] == product['id']);
+
+      if (existingProductIndex != -1) {
+        // Jika produk sudah ada, update jumlahnya
+        selectedProducts[existingProductIndex]['quantity'] += 1;
+      } else {
+        // Jika produk belum ada, tambahkan ke selectedProducts
+        selectedProducts.add({
+          ...product,
+          'quantity': 1,
+        });
+      }
+
+      // Tambahkan harga produk ke total bill yang sudah ada
+      totalBill += product['price'];
+
+      // Update stok produk
+      product['stock'] -= 1;
+      _updateProductStockInFirebase(product);
+    });
+    _showSnackBar('${product['name']} ditambahkan ke bill');
+  }
+
+  void _removeFromBill(Map<String, dynamic> product) {
+    setState(() {
+      // Cari produk yang ada di selectedProducts
+      final existingProductIndex =
+          selectedProducts.indexWhere((p) => p['id'] == product['id']);
+
+      if (existingProductIndex != -1) {
+        // Jika produk ditemukan, kurangi kuantitasnya
+        if (selectedProducts[existingProductIndex]['quantity'] > 1) {
+          selectedProducts[existingProductIndex]['quantity'] -= 1;
+          totalBill -= product['price'];
+        } else {
+          // Jika hanya ada satu produk, hapus dari daftar selectedProducts
+          selectedProducts.removeAt(existingProductIndex);
+          totalBill -= product['price'];
+        }
+
+        // Tambahkan kembali stok produk
+        product['stock'] += 1;
+        _updateProductStockInFirebase(product);
+      }
+    });
+    _showSnackBar('${product['name']} dikurangi dari bill');
+  }
+
+  void _updateProductStockInFirebase(Map<String, dynamic> product) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    try {
+      await firestore.collection('products').doc(product['id']).update({
+        'stock': product['stock'],
+      });
+      debugPrint('Stok produk berhasil diperbarui di Firebase!');
+    } catch (error) {
+      _showErrorSnackBar('Gagal memperbarui stok produk: $error');
     }
   }
 
   void _uploadOrderHistoryToFirebase() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-
     try {
       await firestore.collection('orderHistory').add({
         'products': selectedProducts.map((product) {
           return {
-            'name': product.name,
-            'price': product.price,
-            'quantity': 1,
+            'name': product['name'],
+            'price': product['price'] * product['quantity'],
+            'quantity': product['quantity'],
           };
         }).toList(),
         'total': totalBill,
@@ -92,23 +148,13 @@ class _OrderPageState extends State<OrderPage> {
       return;
     }
 
-    orderHistory.add({
-      'products': selectedProducts.map((product) {
-        return {
-          'name': product.name,
-          'price': product.price,
-          'quantity': 1,
-        };
-      }).toList(),
-      'total': totalBill,
-    });
+    _uploadOrderHistoryToFirebase();
 
+    // Reset untuk menampilkan halaman history
     setState(() {
       selectedProducts.clear();
       totalBill = 0.0;
     });
-
-    _uploadOrderHistoryToFirebase();
 
     Navigator.push(
       context,
@@ -139,26 +185,6 @@ class _OrderPageState extends State<OrderPage> {
             height: MediaQuery.of(context).size.height,
             decoration: BoxDecoration(color: AppColors.background),
           ),
-          Container(
-            height: 453,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color.fromARGB(255, 180, 181, 168),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 80,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
-          ),
           Column(
             children: [
               Flexible(
@@ -166,7 +192,7 @@ class _OrderPageState extends State<OrderPage> {
                 child: ListView.builder(
                   itemCount: products.length,
                   itemBuilder: (context, index) {
-                    Product product = products[index];
+                    Map<String, dynamic> product = products[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
                           vertical: 8.0, horizontal: 16.0),
@@ -176,40 +202,31 @@ class _OrderPageState extends State<OrderPage> {
                         child: Row(
                           children: [
                             Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(6.0),
-                                  child: product.imageUrl != null &&
-                                          product.imageUrl!.isNotEmpty
-                                      ? Image.network(
-                                          product.imageUrl!,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Image.asset(
-                                          'assets/images/1.jpeg',
-                                          fit: BoxFit.cover,
-                                        ),
-                                )),
+                              width: 80,
+                              height: 80,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6.0),
+                                child: product['imageUrl'].isNotEmpty
+                                    ? Image.network(product['imageUrl'],
+                                        fit: BoxFit.cover)
+                                    : Image.asset('assets/images/1.jpeg',
+                                        fit: BoxFit.cover),
+                              ),
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    product.name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
+                                  Text(product['name'],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
                                   const SizedBox(height: 4),
-                                  Text('Stok: ${product.stock}'),
+                                  Text('Stok: ${product['stock']}'),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product.price)}',
+                                    '${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
                                     style: const TextStyle(
                                         color: Colors.green,
                                         fontWeight: FontWeight.bold),
@@ -217,9 +234,17 @@ class _OrderPageState extends State<OrderPage> {
                                 ],
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.add_shopping_cart),
-                              onPressed: () => _addToBill(product),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.add_shopping_cart),
+                                  onPressed: () => _addToBill(product),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.remove_shopping_cart),
+                                  onPressed: () => _removeFromBill(product),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -238,11 +263,11 @@ class _OrderPageState extends State<OrderPage> {
                 child: ListView.builder(
                   itemCount: selectedProducts.length,
                   itemBuilder: (context, index) {
-                    Product product = selectedProducts[index];
+                    Map<String, dynamic> product = selectedProducts[index];
                     return ListTile(
-                      title: Text(product.name),
+                      title: Text('${product['name']} x${product['quantity']}'),
                       subtitle: Text(
-                        'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product.price)}',
+                        'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
                         style: TextStyles.deskriptom,
                       ),
                     );
@@ -265,12 +290,10 @@ class _OrderPageState extends State<OrderPage> {
                     width: 320,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Text(
-                        'Selesai',
-                        textAlign: TextAlign.center,
-                        style: TextStyles.title
-                            .copyWith(fontSize: 20.0, color: Colors.white),
-                      ),
+                      child: Text('Selesai',
+                          textAlign: TextAlign.center,
+                          style: TextStyles.title
+                              .copyWith(fontSize: 20.0, color: Colors.white)),
                     ),
                   ),
                 ),
