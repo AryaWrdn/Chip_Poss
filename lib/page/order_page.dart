@@ -19,6 +19,7 @@ class OrderPage extends StatefulWidget {
 class _OrderPageState extends State<OrderPage> {
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> selectedProducts = [];
+  Map<String, int> originalStock = {};
   double totalBill = 0.0;
 
   @override
@@ -46,6 +47,9 @@ class _OrderPageState extends State<OrderPage> {
           };
         }).toList();
       });
+      for (var product in products) {
+        originalStock[product['id']] = product['stock'];
+      }
     } catch (e) {
       print('Error fetching products: $e');
     }
@@ -122,6 +126,22 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
+  void _restoreOriginalStock() {
+    for (var product in selectedProducts) {
+      final originalQuantity = product['quantity'];
+      final originalProduct =
+          products.firstWhere((p) => p['id'] == product['id']);
+      originalProduct['stock'] += originalQuantity;
+      _updateProductStockInFirebase(originalProduct);
+    }
+
+    // Clear the selected products after restoring stock
+    setState(() {
+      selectedProducts.clear();
+      totalBill = 0.0;
+    });
+  }
+
   void _uploadOrderHistoryToFirebase() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     try {
@@ -174,134 +194,144 @@ class _OrderPageState extends State<OrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Daftar Menu', style: TextStyles.titleApp),
-        backgroundColor: AppColors.bg,
-      ),
-      body: Stack(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(color: AppColors.background),
-          ),
-          Column(
-            children: [
-              Flexible(
-                flex: 3,
-                child: ListView.builder(
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    Map<String, dynamic> product = products[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 16.0),
-                      elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6.0),
-                                child: product['imageUrl'].isNotEmpty
-                                    ? Image.network(product['imageUrl'],
-                                        fit: BoxFit.cover)
-                                    : Image.asset('assets/images/1.jpeg',
-                                        fit: BoxFit.cover),
+    return WillPopScope(
+      onWillPop: () async {
+        // Menangani jika user menekan tombol back
+        _restoreOriginalStock();
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Daftar Menu', style: TextStyles.titleApp),
+          backgroundColor: AppColors.bg,
+        ),
+        body: Stack(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(color: AppColors.background),
+            ),
+            Column(
+              children: [
+                Flexible(
+                  flex: 3,
+                  child: ListView.builder(
+                    itemCount: products.length,
+                    itemBuilder: (context, index) {
+                      Map<String, dynamic> product = products[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  child: product['imageUrl'].isNotEmpty
+                                      ? Image.network(product['imageUrl'],
+                                          fit: BoxFit.cover)
+                                      : Image.asset('assets/images/1.jpeg',
+                                          fit: BoxFit.cover),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(product['name'],
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(product['name'],
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16)),
+                                    const SizedBox(height: 4),
+                                    Text('Stok: ${product['stock']}'),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16)),
-                                  const SizedBox(height: 4),
-                                  Text('Stok: ${product['stock']}'),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
-                                    style: const TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.bold),
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.add_shopping_cart),
+                                    onPressed: () => _addToBill(product),
+                                  ),
+                                  IconButton(
+                                    icon:
+                                        const Icon(Icons.remove_shopping_cart),
+                                    onPressed: () => _removeFromBill(product),
                                   ),
                                 ],
                               ),
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  onPressed: () => _addToBill(product),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.remove_shopping_cart),
-                                  onPressed: () => _removeFromBill(product),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      );
+                    },
+                  ),
+                ),
+                const Divider(color: AppColors.abuabuabu, thickness: 2),
+                const Text(
+                    '||||----------------------Bill----------------------||||',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Divider(color: AppColors.abuabuabu, thickness: 2),
+                Flexible(
+                  flex: 1,
+                  child: ListView.builder(
+                    itemCount: selectedProducts.length,
+                    itemBuilder: (context, index) {
+                      Map<String, dynamic> product = selectedProducts[index];
+                      return ListTile(
+                        title:
+                            Text('${product['name']} x${product['quantity']}'),
+                        subtitle: Text(
+                          'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
+                          style: TextStyles.deskriptom,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const Divider(color: AppColors.abuabuabu, thickness: 2),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'Total: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(totalBill)}',
+                    style: TextStyles.deskriptom,
+                  ),
+                ),
+                Bttnstyl(
+                  child: ElevatedButton(
+                    style: raisedButtonStyle,
+                    onPressed: _completeOrder,
+                    child: SizedBox(
+                      width: 320,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Text('Selesai',
+                            textAlign: TextAlign.center,
+                            style: TextStyles.title
+                                .copyWith(fontSize: 20.0, color: Colors.white)),
                       ),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: AppColors.abuabuabu, thickness: 2),
-              const Text(
-                  '||||----------------------Bill----------------------||||',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const Divider(color: AppColors.abuabuabu, thickness: 2),
-              Flexible(
-                flex: 1,
-                child: ListView.builder(
-                  itemCount: selectedProducts.length,
-                  itemBuilder: (context, index) {
-                    Map<String, dynamic> product = selectedProducts[index];
-                    return ListTile(
-                      title: Text('${product['name']} x${product['quantity']}'),
-                      subtitle: Text(
-                        'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(product['price'])}',
-                        style: TextStyles.deskriptom,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: AppColors.abuabuabu, thickness: 2),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Total: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(totalBill)}',
-                  style: TextStyles.deskriptom,
-                ),
-              ),
-              Bttnstyl(
-                child: ElevatedButton(
-                  style: raisedButtonStyle,
-                  onPressed: _completeOrder,
-                  child: SizedBox(
-                    width: 320,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Text('Selesai',
-                          textAlign: TextAlign.center,
-                          style: TextStyles.title
-                              .copyWith(fontSize: 20.0, color: Colors.white)),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ],
+                const SizedBox(height: 16),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
