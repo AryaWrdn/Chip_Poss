@@ -12,6 +12,7 @@ class Product {
     required this.stock,
     this.imageUrl,
   });
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

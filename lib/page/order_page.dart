@@ -26,6 +26,7 @@ class _OrderPageState extends State<OrderPage> {
   void initState() {
     super.initState();
     _fetchProductsFromFirebase();
+
     if (widget.initialOrderData != null) {
       _loadInitialOrderData(widget.initialOrderData!);
     }
@@ -63,50 +64,67 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   void _addToBill(Map<String, dynamic> product) {
+    if (product['stock'] <= 0) {
+      _showStockAlert(product['name']);
+      return;
+    }
+
     setState(() {
-      // Cek jika produk sudah ada di selectedProducts
       final existingProductIndex =
           selectedProducts.indexWhere((p) => p['id'] == product['id']);
 
       if (existingProductIndex != -1) {
-        // Jika produk sudah ada, update jumlahnya
+        // Jika produk sudah ada, tambahkan quantity-nya
         selectedProducts[existingProductIndex]['quantity'] += 1;
       } else {
-        // Jika produk belum ada, tambahkan ke selectedProducts
+        // Jika produk belum ada, tambahkan produk baru
         selectedProducts.add({
           ...product,
           'quantity': 1,
         });
       }
 
-      // Tambahkan harga produk ke total bill yang sudah ada
-      totalBill += product['price'];
-
       // Update stok produk
+      totalBill += product['price'];
       product['stock'] -= 1;
       _updateProductStockInFirebase(product);
     });
+
     _showSnackBar('${product['name']} ditambahkan ke bill');
+  }
+
+  void _showStockAlert(String productName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Stok Habis'),
+          content: Text('Ups... stok untuk $productName telah habis.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _removeFromBill(Map<String, dynamic> product) {
     setState(() {
-      // Cari produk yang ada di selectedProducts
       final existingProductIndex =
           selectedProducts.indexWhere((p) => p['id'] == product['id']);
-
       if (existingProductIndex != -1) {
-        // Jika produk ditemukan, kurangi kuantitasnya
         if (selectedProducts[existingProductIndex]['quantity'] > 1) {
           selectedProducts[existingProductIndex]['quantity'] -= 1;
           totalBill -= product['price'];
         } else {
-          // Jika hanya ada satu produk, hapus dari daftar selectedProducts
           selectedProducts.removeAt(existingProductIndex);
           totalBill -= product['price'];
         }
-
-        // Tambahkan kembali stok produk
         product['stock'] += 1;
         _updateProductStockInFirebase(product);
       }
@@ -148,6 +166,7 @@ class _OrderPageState extends State<OrderPage> {
       await firestore.collection('orderHistory').add({
         'products': selectedProducts.map((product) {
           return {
+            'id': product['id'],
             'name': product['name'],
             'price': product['price'] * product['quantity'],
             'quantity': product['quantity'],

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chip_pos/page/catatpengeluaran.dart';
 import 'package:chip_pos/page/history_page.dart';
 import 'package:chip_pos/page/order_page.dart';
 import 'package:chip_pos/page/product_page.dart';
@@ -7,7 +8,6 @@ import 'package:chip_pos/styles/style.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// import 'package:fl_chart/fl_chart.dart';
 
 class Menu extends StatefulWidget {
   const Menu({super.key});
@@ -336,43 +336,39 @@ class _MenuState extends State<Menu> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _currentPage == index
-                                ? AppColors.kuning // Warna aktif
-                                : AppColors.background, // Warna tidak aktif
+                                ? AppColors.kuning
+                                : AppColors.background,
                           ),
                         );
                       }),
                     ),
-
-                    // Menu 3 kotak di tengah secara horizontal
-                    // Menu 3 kotak di tengah secara horizontal
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
                       child: Container(
                         height: 90,
                         decoration: BoxDecoration(
-                          color: Colors
-                              .white, // Warna latar belakang untuk seluruh menu
-                          borderRadius:
-                              BorderRadius.circular(20), // Sudut melengkung
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey.withOpacity(0.5),
                               spreadRadius: 2,
                               blurRadius: 5,
-                              offset: Offset(0, 3), // Posisi bayangan
+                              offset: Offset(0, 3),
                             ),
                           ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: menuBox(
-                                'Tambah Menu',
+                                'Tambah    Menu',
                                 Image.asset(
                                   'assets/images/hi.webp',
-                                  height: 35,
-                                  width: 35,
+                                  height: 29,
+                                  width: 29,
                                 ),
                                 () => Navigator.push(
                                   context,
@@ -383,11 +379,11 @@ class _MenuState extends State<Menu> {
                             ),
                             Expanded(
                               child: menuBox(
-                                'Catat Pesanan',
+                                'Catat     Pesanan',
                                 Image.asset(
                                   'assets/images/catatan.png',
-                                  height: 34,
-                                  width: 34,
+                                  height: 29,
+                                  width: 29,
                                 ),
                                 () => Navigator.push(
                                   context,
@@ -401,8 +397,8 @@ class _MenuState extends State<Menu> {
                                 'History Pesanan',
                                 Image.asset(
                                   'assets/images/history.png',
-                                  height: 34,
-                                  width: 34,
+                                  height: 29,
+                                  width: 29,
                                 ),
                                 () => Navigator.push(
                                   context,
@@ -413,16 +409,32 @@ class _MenuState extends State<Menu> {
                             ),
                             Expanded(
                               child: menuBox(
-                                'Stock Product',
+                                'Stock     Product',
                                 Image.asset(
                                   'assets/images/stock.png',
-                                  height: 34,
-                                  width: 34,
+                                  height: 29,
+                                  width: 29,
                                 ),
                                 () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => StockPage()),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: menuBox(
+                                'Catat Pengeluaran',
+                                Image.asset(
+                                  'assets/images/catat pengeluaran.png',
+                                  height: 29,
+                                  width: 29,
+                                ),
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => CatatPengeluaran(
+                                          totalPendapatan: totalPendapatan)),
                                 ),
                               ),
                             ),
@@ -436,8 +448,7 @@ class _MenuState extends State<Menu> {
                           color: AppColors.abuabuabu, thickness: 2),
                     ),
                     Container(
-                      height:
-                          320, // Beri tinggi agar Container bisa di-scroll di dalam batas tinggi ini
+                      height: 320,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                       child: ListView.builder(
                         itemCount: products.length,
@@ -461,7 +472,7 @@ class _MenuState extends State<Menu> {
                                               fit: BoxFit.cover,
                                             )
                                           : Image.asset(
-                                              'assets/images/placeholder.png',
+                                              'assets/images/1.jpeg',
                                               fit: BoxFit.cover,
                                             ),
                                     ),
@@ -531,13 +542,13 @@ class _MenuState extends State<Menu> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 60,
+        width: 40,
         height: 60,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             icon, // Gambar atau ikon sebagai widget
-            const SizedBox(height: 10),
+            const SizedBox(height: 0),
             Text(
               title,
               textAlign: TextAlign.center,

@@ -129,7 +129,7 @@ class HistoryPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: groupedProducts.entries.map((entry) {
                                   return Text(
-                                    '${entry.key} - ${entry.value['quantity']}x - ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(entry.value['price'])}',
+                                    '${entry.key} - ${entry.value['quantity']}x',
                                     style: TextStyles.deskriptom,
                                   );
                                 }).toList(),
