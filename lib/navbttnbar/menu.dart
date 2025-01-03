@@ -246,13 +246,11 @@ class _MenuState extends State<Menu> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 5),
                       child: Container(
-                        height:
-                            40, // Meninggikan container untuk memberi ruang bagi elemen
+                        height: 40,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: AppColors
-                                .abuabuabu, // Ganti dengan warna yang diinginkan
-                            width: 2, // Ganti dengan ketebalan yang diinginkan
+                            color: AppColors.abuabuabu,
+                            width: 2,
                           ),
                           color: const Color.fromARGB(189, 248, 242, 221),
                           borderRadius: BorderRadius.circular(20),

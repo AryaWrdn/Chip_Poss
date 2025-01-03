@@ -1,5 +1,6 @@
 import 'dart:async'; // Untuk StreamSubscription
 import 'dart:io';
+import 'package:chip_pos/styles/style.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Tambahkan package ini
 import 'package:chip_pos/database/db_helper.dart' as db;
 import 'package:chip_pos/database/product.dart';
@@ -234,23 +235,151 @@ class _StockPageState extends State<StockPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Stock Management'),
+        backgroundColor: AppColors.bg,
       ),
-      body: ListView.builder(
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          Product product = products[index];
-          return ListTile(
-            title: Text(product.name),
-            subtitle: Text('Stok: ${product.stock}, Harga: ${product.price}'),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => _deleteProduct(product.id!),
+      body: Container(
+        child: Stack(
+          children: [
+            Container(
+              height: 785,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(154, 203, 200, 185),
+              ),
             ),
-            onTap: () {
-              _updateProduct(product);
-            },
-          );
-        },
+            Container(
+              height: 105,
+              decoration: BoxDecoration(
+                color: AppColors.merah,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(50.0),
+                  bottomRight: Radius.circular(50.0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(50.0),
+                  bottomRight: Radius.circular(50.0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+            ),
+            ListView.builder(
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                Product product = products[index];
+                return Card(
+                  color: const Color.fromARGB(255, 197, 175, 131),
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Mengatur alignment gambar di atas informasi produk
+                          children: [
+                            // Gambar Produk di Kiri
+                            product.imageUrl != null &&
+                                    product.imageUrl!.isNotEmpty
+                                ? Container(
+                                    height: 100,
+                                    width: 100,
+                                    child: Image.network(
+                                      product.imageUrl!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Container(
+                                    height: 100,
+                                    width: 100,
+                                    color: Colors.grey[200],
+                                    child: Center(
+                                        child: Icon(Icons.image,
+                                            color: Colors.grey)),
+                                  ),
+                            SizedBox(width: 16),
+                            // Informasi Produk di Kiri
+                            Container(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Stok: ${product.stock}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Harga: ${product.price}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment
+                                .end, // Membuat ikon di sebelah kanan
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.white),
+                                onPressed: () => _updateProduct(product),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteProduct(product.id!),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          ],
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ class AppColors {
   static const birugelap = Color.fromARGB(255, 2, 20, 44);
   static const birugelapdiki = Color.fromARGB(226, 175, 190, 214);
   static const birugelapdikit = Color.fromARGB(255, 20, 67, 138);
+  static const hijau = Color.fromARGB(255, 113, 183, 92);
   static const tbl = Color.fromARGB(181, 73, 89, 113);
   static const abubiru = Color.fromARGB(183, 27, 54, 94);
   static const abuabuabu = Color.fromARGB(255, 71, 71, 46);
