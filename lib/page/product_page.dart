@@ -182,107 +182,120 @@ class _ProductPageState extends State<ProductPage> {
         title: Text('Tambah Product', style: TextStyles.titleApp),
         backgroundColor: AppColors.bg,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
+      body: Container(
+        height: 785,
+        child: Stack(
           children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Nama Product',
-                labelStyle: TextStyle(color: AppColors.hitamgelap),
-                filled: true,
-                fillColor: Colors.white,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
+            Container(
+              height: 785,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(154, 203, 200, 185),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: priceController,
-              decoration: InputDecoration(
-                labelText: 'Harga',
-                labelStyle: TextStyle(color: AppColors.hitamgelap),
-                filled: true,
-                fillColor: Colors.white,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: stockController,
-              decoration: InputDecoration(
-                labelText: 'Stock',
-                labelStyle: TextStyle(color: AppColors.hitamgelap),
-                filled: true,
-                fillColor: Colors.white,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: AppColors.hitamgelap, width: 2.0),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 22),
-            Bttnstyl(
-              child: SizedBox(
-                height: 30,
-                width: 150,
-                child: ElevatedButton(
-                  style: raisedButtonStyle,
-                  onPressed: _selectImage,
-                  child: Text('Pilih Gambar'),
-                ),
-              ),
-            ),
-            if (imagePath != null)
-              Image.file(
-                File(imagePath!),
-                height: 100,
-                width: 100,
-                fit: BoxFit.cover,
-              ),
-            SizedBox(height: 22),
-            Bttnstyl(
-              child: ElevatedButton(
-                style: raisedButtonStyle,
-                onPressed: _addProduct,
-                child: SizedBox(
-                  width: 320,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text(
-                      'Selesai',
-                      textAlign: TextAlign.center,
-                      style: TextStyles.title
-                          .copyWith(fontSize: 20.0, color: Colors.white),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Product',
+                      labelStyle: TextStyle(color: AppColors.hitamgelap),
+                      filled: true,
+                      fillColor: Colors.white,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: priceController,
+                    decoration: InputDecoration(
+                      labelText: 'Harga',
+                      labelStyle: TextStyle(color: AppColors.hitamgelap),
+                      filled: true,
+                      fillColor: Colors.white,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: stockController,
+                    decoration: InputDecoration(
+                      labelText: 'Stock',
+                      labelStyle: TextStyle(color: AppColors.hitamgelap),
+                      filled: true,
+                      fillColor: Colors.white,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            BorderSide(color: AppColors.hitamgelap, width: 2.0),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 22),
+                  Bttnstyl(
+                    child: SizedBox(
+                      height: 30,
+                      width: 150,
+                      child: ElevatedButton(
+                        style: raisedButtonStyle,
+                        onPressed: _selectImage,
+                        child: Text('Pilih Gambar'),
+                      ),
+                    ),
+                  ),
+                  if (imagePath != null)
+                    Image.file(
+                      File(imagePath!),
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  SizedBox(height: 22),
+                  Bttnstyl(
+                    child: ElevatedButton(
+                      style: raisedButtonStyle,
+                      onPressed: _addProduct,
+                      child: SizedBox(
+                        width: 320,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            'Selesai',
+                            textAlign: TextAlign.center,
+                            style: TextStyles.title
+                                .copyWith(fontSize: 20.0, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

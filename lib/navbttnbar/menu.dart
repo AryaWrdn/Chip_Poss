@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chip_pos/navbttnbar/profile.dart';
 import 'package:chip_pos/page/catatpengeluaran.dart';
 import 'package:chip_pos/page/history_page.dart';
 import 'package:chip_pos/page/order_page.dart';
@@ -7,6 +8,7 @@ import 'package:chip_pos/page/stock.dart';
 import 'package:chip_pos/styles/style.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class Menu extends StatefulWidget {
@@ -21,6 +23,8 @@ class _MenuState extends State<Menu> {
   List<Map<String, dynamic>> products = [];
   final PageController _pageController = PageController();
   final TextEditingController _searchController = TextEditingController();
+  late String userRole = 'user';
+  late User? user;
   int _currentPage = 0;
   late Timer _timer;
   double totalPendapatan = 0;
@@ -28,6 +32,7 @@ class _MenuState extends State<Menu> {
   @override
   void initState() {
     super.initState();
+    _getUserRole();
     _fetchProductsFromFirebase();
     _fetchTotalPendapatan();
     _searchController.addListener(_filterProducts);
@@ -52,6 +57,25 @@ class _MenuState extends State<Menu> {
         _currentPage = _pageController.page!.round();
       });
     });
+  }
+
+  Future<void> _getUserRole() async {
+    user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // Cek role di Firestore
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userSnapshot.exists) {
+        setState(() {
+          userRole = userSnapshot['role'] ??
+              'user'; // Default 'user' if role is not found
+        });
+      }
+    }
   }
 
   Future<void> _fetchProductsFromFirebase() async {
@@ -228,12 +252,23 @@ class _MenuState extends State<Menu> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        CircleAvatar(
+                        GestureDetector(
+                          onTap: () {
+                            // Navigasi ke halaman profil
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      Profile()), // Ganti dengan halaman profil yang sesuai
+                            );
+                          },
+                          child: CircleAvatar(
                             radius: 25.0,
-                            backgroundImage: AssetImage('assets/images/1.jpeg')
-                            // NetworkImage(
-                            //     'https://example.com/1.jpeg'),
-                            ),
+                            backgroundImage: AssetImage('assets/images/1.jpeg'),
+                            // Bisa menggunakan NetworkImage jika ingin menggunakan gambar dari URL
+                            // backgroundImage: NetworkImage('https://example.com/1.jpeg'),
+                          ),
+                        )
                       ],
                     ),
                   ),
@@ -360,21 +395,23 @@ class _MenuState extends State<Menu> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Expanded(
-                              child: menuBox(
-                                'Tambah    Menu',
-                                Image.asset(
-                                  'assets/images/hi.webp',
-                                  height: 29,
-                                  width: 29,
-                                ),
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ProductPage()),
+                            if (userRole == 'admin') ...[
+                              Expanded(
+                                child: menuBox(
+                                  'Tambah    Menu',
+                                  Image.asset(
+                                    'assets/images/hi.webp',
+                                    height: 29,
+                                    width: 29,
+                                  ),
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => ProductPage()),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                             Expanded(
                               child: menuBox(
                                 'Catat     Pesanan',
@@ -405,21 +442,23 @@ class _MenuState extends State<Menu> {
                                 ),
                               ),
                             ),
-                            Expanded(
-                              child: menuBox(
-                                'Stock     Product',
-                                Image.asset(
-                                  'assets/images/stock.png',
-                                  height: 29,
-                                  width: 29,
-                                ),
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => StockPage()),
+                            if (userRole == 'admin') ...[
+                              Expanded(
+                                child: menuBox(
+                                  'Stock     Product',
+                                  Image.asset(
+                                    'assets/images/stock.png',
+                                    height: 29,
+                                    width: 29,
+                                  ),
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => StockPage()),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                             Expanded(
                               child: menuBox(
                                 'Catat Pengeluaran',

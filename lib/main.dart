@@ -1,5 +1,6 @@
 import 'package:chip_pos/navbttnbar/menu.dart';
-import 'package:chip_pos/navbttnbar/profile.dart';
+import 'package:chip_pos/navbttnbar/pembukuan.dart';
+// import 'package:chip_pos/navbttnbar/profile.dart';
 import 'package:chip_pos/styles/style.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -36,7 +37,7 @@ class _MainMenuState extends State<MainMenu> {
   int _selectedIndex = 0;
   static List<Widget> _pages = <Widget>[
     Menu(),
-    Profile(),
+    SummaryPendapatanPage(),
   ];
 
   void _onItemTapped(int index) {

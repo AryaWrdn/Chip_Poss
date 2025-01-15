@@ -1,35 +1,52 @@
-import 'package:chip_pos/login/register.dart';
+import 'package:chip_pos/login/login.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:chip_pos/styles/stylbttn.dart';
 import 'package:chip_pos/styles/style.dart';
 import 'package:chip_pos/styles/textstyledec.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:chip_pos/main.dart';
 
-class Login extends StatefulWidget {
+class Register extends StatefulWidget {
   @override
-  _LoginState createState() => _LoginState();
+  _RegisterState createState() => _RegisterState();
 }
 
-class _LoginState extends State<Login> {
+class _RegisterState extends State<Register> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   bool isObscure = true;
 
-  Future<void> _login() async {
+  Future<void> _register() async {
     try {
-      final UserCredential user = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+      // Buat user di Firebase Authentication
+      final UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      if (user.user != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => MainMenu()),
-        );
+
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Simpan data pengguna ke Firestore dengan role default 'user'
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'email': user.email,
+          'name': _nameController.text.trim(),
+          'role': 'user', // Role default
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Navigasi ke halaman login atau dashboard
+        Navigator.of(context).pop();
       }
     } catch (e) {
-      print("Login Error: $e");
+      print("Register Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Register gagal: $e")),
+      );
     }
   }
 
@@ -75,7 +92,6 @@ class _LoginState extends State<Login> {
               ],
             ),
           ]),
-          // Center content
           Container(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -83,21 +99,30 @@ class _LoginState extends State<Login> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '𝓁ℴ𝑔𝒾𝓃',
+                    '𝓇ℯ𝑔𝒾𝓈𝓉ℯ𝓇',
                     style: TextStyle(
                       fontSize: 58,
                       fontWeight: FontWeight.bold,
                       color: Color.fromARGB(255, 81, 81, 54),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                  CustomTextField(
+                    controller: _nameController,
+                    textInputType: TextInputType.name,
+                    textInputAction: TextInputAction.next,
+                    hint: 'Name',
+                    haSuffix: true,
+                    icon: Icons.person,
+                  ),
+                  const SizedBox(height: 16.0),
                   CustomTextField(
                     controller: _emailController,
                     textInputType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    hint: 'Username,Email,No.telp',
+                    hint: 'Email',
                     haSuffix: true,
-                    icon: Icons.person,
+                    icon: Icons.email,
                   ),
                   const SizedBox(height: 16.0),
                   CustomTextField(
@@ -108,17 +133,17 @@ class _LoginState extends State<Login> {
                     isObscure: isObscure,
                     haSuffix: true,
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
                   Bttnstyl(
                     child: ElevatedButton(
                       style: raisedButtonStyle,
-                      onPressed: _login,
+                      onPressed: _register,
                       child: SizedBox(
                         width: 320,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Text(
-                            'Login',
+                            'Register',
                             textAlign: TextAlign.center,
                             style: TextStyles.title.copyWith(
                               fontSize: 20.0,
@@ -133,42 +158,15 @@ class _LoginState extends State<Login> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Register()),
+                        MaterialPageRoute(builder: (context) => Login()),
                       );
                     },
-                    child: Text("Don't have an account? Register here"),
+                    child: Text("Back To Login"),
                   ),
-                  SizedBox(
-                    height: 95,
-                  ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 0, 112, 80),
-                      child: Text(
-                        'ˢᵘᵖᵖᵒʳᵗ ᵇʸ ᶜʰⁱᵖ ᴾᵒˢ', // Ganti dengan nama Anda atau perusahaan
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: const Color.fromARGB(255, 122, 60, 60),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
+                  const SizedBox(
                     height: 30,
-                  )
+                  ),
                 ],
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-              child: Image.asset(
-                'assets/images/loginpng.png',
-                height: 300, // Sesuaikan tinggi gambar jika diperlukan
-                fit: BoxFit.contain, // Agar gambar tidak terdistorsi
               ),
             ),
           ),
