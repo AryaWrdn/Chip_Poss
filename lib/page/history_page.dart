@@ -1,9 +1,16 @@
+import 'dart:io';
+
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:chip_pos/page/order_page.dart';
 import 'package:chip_pos/styles/stylbttn.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:chip_pos/styles/style.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:chip_pos/page/layoutprint/printenum.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -12,7 +19,171 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   TextEditingController _searchController = TextEditingController();
+  final BlueThermalPrinter printer = BlueThermalPrinter.instance;
+  bool _connected = false;
+  BluetoothDevice? _device;
+  List<BluetoothDevice> _devices = [];
+
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    initPlatformState();
+    super.initState();
+  }
+
+  void _connect() {
+    if (_device != null) {
+      printer.connect(_device!).catchError((error) {});
+      setState(() => _connected = true);
+      printLayout();
+      // printer.isConnected.then((isConnected) {
+      //   if (isConnected == true) {
+      //     print("Already connected to ${_device!.name}");
+      //   }
+      // });
+    }
+  }
+
+  void printLayout() async {
+    // String filename = 'catatan.png';
+    // ByteData bytesData = await rootBundle.load("assets/images/catatan.png");
+    // String dir = (await getApplicationDocumentsDirectory()).path;
+    // File file = await File('$dir/$filename').writeAsBytes(bytesData.buffer
+    //     .asUint8List(bytesData.offsetInBytes, bytesData.lengthInBytes));
+
+    ///image from Asset
+    // ByteData bytesAsset = await rootBundle.load("assets/images/catatan.png");
+    // Uint8List imageBytesFromAsset = bytesAsset.buffer
+    //     .asUint8List(bytesAsset.offsetInBytes, bytesAsset.lengthInBytes);
+
+    // ///image from Network
+    // var response = await http.get(Uri.parse(
+    //     "https://raw.githubusercontent.com/kakzaki/blue_thermal_printer/master/example/assets/images/yourlogo.png"));
+    // Uint8List bytesNetwork = response.bodyBytes;
+    // // Uint8List imageBytesFromNetwork = bytesNetwork.buffer
+    //     .asUint8List(bytesNetwork.offsetInBytes, bytesNetwork.lengthInBytes);
+    printer.printNewLine();
+    printer.printCustom("HEADER", Size.boldMedium.val, AlignLayout.center.val);
+    printer.printNewLine();
+    // printer.printImage(file.path); //path of your image/logo
+    printer.printNewLine();
+    // printer.printImageBytes(imageBytesFromAsset); //image from Asset
+    printer.printNewLine();
+    // printer.printImageBytes(imageBytesFromNetwork); //image from Network
+    printer.printNewLine();
+    printer.printLeftRight("LEFT", "RIGHT", Size.medium.val);
+    printer.printLeftRight("LEFT", "RIGHT", Size.bold.val);
+    printer.printLeftRight("LEFT", "RIGHT", Size.bold.val,
+        format:
+            "%-15s %15s %n"); //15 is number off character from left or right
+    printer.printNewLine();
+    printer.printLeftRight("LEFT", "RIGHT", Size.boldMedium.val);
+    printer.printLeftRight("LEFT", "RIGHT", Size.boldLarge.val);
+    printer.printLeftRight("LEFT", "RIGHT", Size.extraLarge.val);
+    printer.printNewLine();
+    printer.print3Column("Col1", "Col2", "Col3", Size.bold.val);
+    printer.print3Column("Col1", "Col2", "Col3", Size.bold.val,
+        format:
+            "%-10s %10s %10s %n"); //10 is number off character from left center and right
+    printer.printNewLine();
+    printer.print4Column("Col1", "Col2", "Col3", "Col4", Size.bold.val);
+    printer.print4Column("Col1", "Col2", "Col3", "Col4", Size.bold.val,
+        format: "%-8s %7s %7s %7s %n");
+    printer.printNewLine();
+    printer.printCustom("čĆžŽšŠ-H-ščđ", Size.bold.val, AlignLayout.center.val,
+        charset: "windows-1250");
+    printer.printLeftRight("Številka:", "18000001", Size.bold.val,
+        charset: "windows-1250");
+    printer.printCustom("Body left", Size.bold.val, AlignLayout.left.val);
+    printer.printCustom("Body right", Size.medium.val, AlignLayout.right.val);
+    printer.printNewLine();
+    printer.printCustom("Thank You", Size.bold.val, AlignLayout.center.val);
+    printer.printNewLine();
+    printer.printQRcode(
+        "Insert Your Own Text to Generate", 200, 200, AlignLayout.center.val);
+    printer.printNewLine();
+    printer.printNewLine();
+    printer.paperCut();
+  }
+
+  Future<void> initPlatformState() async {
+    bool? isConnected = await printer.isConnected;
+    List<BluetoothDevice> devices = [];
+    try {
+      devices = await printer.getBondedDevices();
+      setState(() {
+        _device = devices[3];
+      });
+    } on PlatformException {}
+
+    printer.onStateChanged().listen((state) {
+      switch (state) {
+        case BlueThermalPrinter.CONNECTED:
+          setState(() {
+            _connected = true;
+            print("bluetooth device state: connected");
+          });
+          break;
+        case BlueThermalPrinter.DISCONNECTED:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: disconnected");
+          });
+          break;
+        case BlueThermalPrinter.DISCONNECT_REQUESTED:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: disconnect requested");
+          });
+          break;
+        case BlueThermalPrinter.STATE_TURNING_OFF:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: bluetooth turning off");
+          });
+          break;
+        case BlueThermalPrinter.STATE_OFF:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: bluetooth off");
+          });
+          break;
+        case BlueThermalPrinter.STATE_ON:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: bluetooth on");
+          });
+          break;
+        case BlueThermalPrinter.STATE_TURNING_ON:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: bluetooth turning on");
+          });
+          break;
+        case BlueThermalPrinter.ERROR:
+          setState(() {
+            _connected = false;
+            print("bluetooth device state: error");
+          });
+          break;
+        default:
+          print(state);
+          break;
+      }
+    });
+
+    if (!mounted) return;
+    setState(() {
+      _devices = devices;
+    });
+
+    if (isConnected == true) {
+      setState(() {
+        _connected = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +464,28 @@ class _HistoryPageState extends State<HistoryPage> {
                                                 width: 120,
                                                 child: Text(
                                                   'Edit',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyles.title
+                                                      .copyWith(
+                                                          fontSize: 16.0,
+                                                          color: Colors.white),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 40,
+                                          child: Bttnstyl(
+                                            child: ElevatedButton(
+                                              style: raisedButtonStyle,
+                                              onPressed: () {
+                                                _connect();
+                                              },
+                                              child: SizedBox(
+                                                width: 120,
+                                                child: Text(
+                                                  'Print Order History',
                                                   textAlign: TextAlign.center,
                                                   style: TextStyles.title
                                                       .copyWith(

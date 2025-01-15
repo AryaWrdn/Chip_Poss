@@ -21,6 +21,10 @@ dependencies:
   firebase_storage: ^12.3.3
   firebase_auth: ^5.3.1
   flutter_image_compress: ^2.3.0
+  blue_thermal_printer: ^1.2.3
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.5
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
